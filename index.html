@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>ClearNote Hybrid</title></head>
+<body>
+<h1>ClearNote Hybrid</h1>
+<p>Paste a note or a long document. Private notes are tidied on your device only — the text never leaves it, and the app refuses rather than sending them anywhere. Quick summaries run on-device when possible and fall back to the cloud. Long documents go to the cloud model for a deeper read, with an on-device fallback. All three run through Firebase AI Logic, and every result says where it actually ran.</p>
+<textarea id="in" rows="12" cols="70" placeholder="Paste text here"></textarea><br>
+<button data-fn="tidy">Tidy privately (on-device only)</button>
+<button data-fn="quick">Quick summary (hybrid)</button>
+<button data-fn="deep">Deep read (cloud first)</button>
+<pre id="out"></pre>
+<script type="module">
+import { initFirebase, tidyPrivate, summarizeQuick, deepRead } from "./src/main.js";
+const fns = { tidy: tidyPrivate, quick: summarizeQuick, deep: deepRead };
+const ready = initFirebase();
+document.querySelectorAll("button").forEach(b => b.onclick = async () => {
+  const out = document.getElementById("out");
+  if (!ready.ok) { out.textContent = "Add your Firebase config in src/config.js first (see README). No text was sent anywhere."; return; }
+  const text = document.getElementById("in").value.trim();
+  if (!text) { out.textContent = "Paste some text first."; return; }
+  out.textContent = "Working…";
+  try {
+    const r = await fns[b.dataset.fn](text);
+    const src = String(r.source).toUpperCase();
+    out.textContent = r.text + "\n\n— Ran: " + (src === "ON_DEVICE" ? "on this device" : src === "IN_CLOUD" ? "in the cloud" : r.source);
+  } catch (e) { out.textContent = "That run did not finish: " + e.message; }
+});
+</script>
+</body></html>

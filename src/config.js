@@ -1,8 +1,13 @@
-// Local runtime config for the clearnote-hybrid Firebase project (Spark, $0).
-// Firebase web config values are client identifiers, not secrets.
-// Public hosted config for the GitHub Pages copy. Values are client
-// identifiers, not secrets. App Check Fraud Defense (reCAPTCHA
-// Enterprise) is registered for this app and the Pages domain.
+// Public web config for ClearNote Hybrid (Firebase project
+// clearnote-hybrid, Spark, $0) — shipped in this repo on purpose:
+// a browser app sends these values to every visitor, so they are
+// client identifiers, not secrets. Protection comes from the
+// controls around them, both verified 2026-11-25: the browser API
+// key is restricted in Google Cloud to Firebase AI Logic,
+// Firebase App Check, Firebase Installations, and reCAPTCHA
+// Enterprise only, and App Check (Fraud Defense / reCAPTCHA
+// Enterprise) is registered for this app and the Pages domain
+// and enforced for AI Logic.
 export const firebaseConfig = {
   apiKey: "AIzaSyDVKKFU2tA_WK18XiZXsb3Mi7D68xBB93g",
   authDomain: "clearnote-hybrid.firebaseapp.com",

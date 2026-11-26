@@ -1,28 +1,80 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><title>ClearNote Hybrid</title></head>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ClearNote Hybrid — private notes stay private</title>
+<style>
+  :root { color-scheme: light; }
+  body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; margin: 0; background: #f6f7f9; color: #1c2333; }
+  main { max-width: 760px; margin: 0 auto; padding: 32px 20px 48px; }
+  h1 { font-size: 28px; margin: 0 0 8px; }
+  .lede { font-size: 16px; line-height: 1.55; color: #3d465e; margin: 0 0 20px; }
+  .card { background: #fff; border: 1px solid #dde1ea; border-radius: 12px; padding: 20px; }
+  label { font-weight: 600; display: block; margin-bottom: 8px; }
+  textarea { width: 100%; box-sizing: border-box; border: 1px solid #c9cfdd; border-radius: 8px; padding: 10px; font: inherit; font-size: 15px; line-height: 1.5; }
+  .samples { margin: 10px 0 16px; font-size: 14px; color: #3d465e; }
+  .samples button { margin-left: 6px; }
+  .actions { display: flex; flex-wrap: wrap; gap: 10px; }
+  button { font: inherit; font-size: 15px; padding: 10px 14px; border-radius: 8px; border: 1px solid #2b4acb; background: #2b4acb; color: #fff; cursor: pointer; }
+  button.secondary { background: #fff; color: #2b4acb; }
+  button:disabled { opacity: .55; cursor: wait; }
+  .routes { display: grid; gap: 8px; margin: 0 0 20px; padding: 0; list-style: none; font-size: 14.5px; line-height: 1.5; }
+  .routes li { background: #eef1f8; border-radius: 8px; padding: 10px 12px; }
+  .routes b { color: #1c2333; }
+  pre { white-space: pre-wrap; word-wrap: break-word; background: #101828; color: #e6ebf5; border-radius: 8px; padding: 14px; min-height: 60px; font-size: 14.5px; line-height: 1.55; }
+  footer { margin-top: 20px; font-size: 13.5px; color: #5a6480; line-height: 1.6; }
+  footer a { color: #2b4acb; }
+</style></head>
 <body>
+<main>
 <h1>ClearNote Hybrid</h1>
-<p>Paste a note or a long document. Private notes are tidied on your device only — the text never leaves it, and the app refuses rather than sending them anywhere. Quick summaries run on-device when possible and fall back to the cloud. Long documents go to the cloud model for a deeper read, with an on-device fallback. All three run through Firebase AI Logic, and every result says where it actually ran.</p>
-<textarea id="in" rows="12" cols="70" placeholder="Paste text here"></textarea><br>
+<p class="lede">Paste a note or a long document. Private notes are tidied on your device only — the text never leaves it, and the app refuses rather than sending them anywhere. Quick summaries run on-device when possible and fall back to the cloud. Long documents go to the cloud model for a deeper read, with an on-device fallback. All three run through Firebase AI Logic, and every result says where it actually ran.</p>
+<ul class="routes">
+  <li><b>Tidy privately</b> — on-device only. If no on-device model is available, it refuses instead of sending your text to the cloud.</li>
+  <li><b>Quick summary</b> — hybrid. On-device when Gemini Nano is available in Chrome, cloud fallback when it is not.</li>
+  <li><b>Deep read</b> — cloud first. Structure, decisions and deadlines, and open questions from the stronger cloud model.</li>
+</ul>
+<div class="card">
+<label for="in">Your text</label>
+<textarea id="in" rows="10" placeholder="Paste text here"></textarea>
+<div class="samples">Try a sample:
+  <button type="button" class="secondary" data-sample="private">Private note</button>
+  <button type="button" class="secondary" data-sample="meeting">Meeting note</button>
+  <button type="button" class="secondary" data-sample="long">Longer document</button>
+</div>
+<div class="actions">
 <button data-fn="tidy">Tidy privately (on-device only)</button>
 <button data-fn="quick">Quick summary (hybrid)</button>
 <button data-fn="deep">Deep read (cloud first)</button>
-<pre id="out"></pre>
+</div>
+<pre id="out">Results appear here, ending with a line that says where the run actually happened.</pre>
+</div>
+<footer>Built with Firebase AI Logic (hybrid inference: Gemini Nano on-device, Gemini in the cloud). No other model API is called anywhere in this app. Source and license: <a href="https://github.com/1OF1Research/clearnote-hybrid">github.com/1OF1Research/clearnote-hybrid</a> (Apache-2.0).</footer>
+</main>
 <script type="module">
 import { initFirebase, tidyPrivate, summarizeQuick, deepRead } from "./src/main.js";
+const samples = {
+  private: "Private — do not share. Dentist moved to Thursday 9am. Pick up prescription after. Remind myself: lock the side door tonight and water the plants before the trip.",
+  meeting: "Team met Tuesday. We decided to launch the beta next week. Alex will write the notes and Sam will check the budget by Friday.",
+  long: "Project update, week of November 23. The team finished the first working version of the notes app and tested it with five people. Everyone could paste a note and get a summary, but two people asked where their text was being sent. We decided that private notes must be processed on the device only, even if that means the app sometimes has to refuse. The launch date moved to December 4 so the privacy routing can be tested properly. Open questions: do we need accounts at all for the first version, and what happens on phones that have no on-device model?"
+};
+document.querySelectorAll("[data-sample]").forEach(b => b.onclick = () => {
+  document.getElementById("in").value = samples[b.dataset.sample];
+});
 const fns = { tidy: tidyPrivate, quick: summarizeQuick, deep: deepRead };
 const ready = initFirebase();
-document.querySelectorAll("button").forEach(b => b.onclick = async () => {
+document.querySelectorAll("[data-fn]").forEach(b => b.onclick = async () => {
   const out = document.getElementById("out");
   if (!ready.ok) { out.textContent = "Add your Firebase config in src/config.js first (see README). No text was sent anywhere."; return; }
   const text = document.getElementById("in").value.trim();
   if (!text) { out.textContent = "Paste some text first."; return; }
+  document.querySelectorAll("[data-fn]").forEach(x => x.disabled = true);
   out.textContent = "Working…";
   try {
     const r = await fns[b.dataset.fn](text);
     const src = String(r.source).toUpperCase();
     out.textContent = r.text + "\n\n— Ran: " + (src === "ON_DEVICE" ? "on this device" : src === "IN_CLOUD" ? "in the cloud" : r.source);
   } catch (e) { out.textContent = "That run did not finish: " + e.message; }
+  document.querySelectorAll("[data-fn]").forEach(x => x.disabled = false);
 });
 </script>
 </body></html>
